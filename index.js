@@ -1,13 +1,64 @@
 var Hoek        = require("hoek"),
-    Traverse    = require('traverse');
+    Traverse    = require('traverse'),
+    internals   = {};
  
+function Mr_Diff() {
+    console.log('hey im mr diff');
+};
+
+/**
+ *  Compare two object and returns the difference between them
+ *  each entry in the returned represents one diff between priginal and challenger 
+ *  
+ *  ex:
+ *  { 
+ *    action : 'deleted'
+ *    path: 'stock.0.deleted',
+ *    newData: undefined,
+ *    oldData: undefined
+ *  }
+ */
+Mr_Diff.prototype.diff = function(original, challenger) {
+    var difference  = internals.deepDiffMapper.map(original, challenger),
+        nodes       = Traverse(difference).paths(),
+        updatePaths = [];
+  
+    for (var i = 0; i < nodes.length; i++) {
+        var node = nodes[i],
+            path,
+            changes,
+            data;
+        
+        if (node.length < 2) {
+            continue;
+        }
+
+        if (node[node.length-1] === 'type') {
+            path    = node.join('.');
+            changes = Hoek.reach(difference, path);
+            
+            if (changes !== 'unchanged') {
+                updatePaths.push({
+                    'action'    : changes,
+                    'path'      : node.slice(0, -1).join('.'),
+                    'newData'   : Hoek.reach(challenger, node.slice(0, -1).join('.')),
+                    'oldData'   : Hoek.reach(original, node.slice(0, -1).join('.'))
+                 });
+            }
+        }
+    }
+   
+   return updatePaths;
+};
+
+
 /**
  *  Deep diff mapper, diffs two given objects and returns the defference, used by the 
  *  products-updater to compare a new product with a given one.
  *
  *  Called with .map
  */
-module.exports.deepDiffMapper = function() {
+internals.deepDiffMapper = function() {
     return {
         VALUE_CREATED: 'created',
         VALUE_UPDATED: 'updated',
@@ -73,45 +124,4 @@ module.exports.deepDiffMapper = function() {
     }
 }();
 
-/**
- *  Compare two object and returns the difference between them
- *  between the two given objects, 
- *  each entry in the array looks like this : 
- *  
- *  { path: 'stock.0.deleted',
- *    newData: undefined,
- *    change: 'deleted' 
- *  }
- */
-module.exports.getDiffs = function(original, challenger) {
-    var difference  = module.exports.deepDiffMapper.map(original, challenger),
-        nodes       = Traverse(difference).paths(),
-        updatePaths = [];
-  
-    for (var i = 0; i < nodes.length; i++) {
-        var node = nodes[i],
-            path,
-            changes,
-            data;
-        
-        if (node.length < 2) {
-            continue;
-        }
-
-        if (node[node.length-1] === 'type') {
-            path    = node.join('.');
-            changes = Hoek.reach(difference, path);
-            
-            if (changes !== 'unchanged') {
-                updatePaths.push({
-                    'action'    : changes,
-                    'path'      : node.slice(0, -1).join('.'),
-                    'newData'   : Hoek.reach(challenger, node.slice(0, -1).join('.')),
-                    'oldData'   : Hoek.reach(original, node.slice(0, -1).join('.'))
-                 });
-            }
-        }
-    }
-   
-   return updatePaths;
-};
+module.exports = exports = new Mr_Diff();
