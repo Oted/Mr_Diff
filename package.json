@@ -1,0 +1,15 @@
+{
+  "name": "mr_differ",
+  "version": "0.0.0",
+  "description": "a tool for diffing two json objects",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "hoek": "^2.8.1",
+    "traverse": "^0.6.6"
+  }
+}
